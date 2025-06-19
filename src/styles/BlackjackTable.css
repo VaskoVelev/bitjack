@@ -1,0 +1,129 @@
+.blackjack-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  background: url("/casino-chips-dice-green-table.jpg") no-repeat center center
+    fixed;
+  background-size: cover;
+  font-family: "Orbitron", sans-serif;
+  overflow-y: auto;
+  padding-top: 180px;
+  padding-bottom: 100px;
+}
+
+.card-row.dealer {
+  position: absolute;
+  top: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 15px;
+}
+
+.card-row.player {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  width: auto;
+}
+
+.card-image {
+  width: 130px;
+  height: auto;
+  position: relative;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s ease;
+}
+
+.card-image.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.card-row.player .card-image {
+  margin-left: -110px;
+}
+
+.card-row.player .card-image:first-child {
+  margin-left: 0;
+}
+
+.card-row.player .card-image.offset-card {
+  transform: translateY(-20px);
+  z-index: 2;
+}
+
+.points-label.dealer-label {
+  position: absolute;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.3rem;
+  color: #ffffff;
+  text-shadow: 0 0 5px black;
+  font-family: "Orbitron", sans-serif;
+}
+
+.points-label.player-label {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.3rem;
+  color: #ffffff;
+  text-shadow: 0 0 5px black;
+  font-family: "Orbitron", sans-serif;
+}
+
+.points-circle {
+  display: inline-block;
+  margin-left: 8px;
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  background: #00ffcc;
+  border-radius: 50%;
+  text-align: center;
+  font-weight: bold;
+  color: black;
+  box-shadow: 0 0 10px #00ffcc;
+  font-size: 1.1rem;
+}
+
+.action-buttons {
+  position: absolute;
+  top: 53%;
+  right: 550px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  z-index: 10;
+}
+
+.action-buttons .glow-button {
+  width: 110px;
+  font-size: 1rem;
+}
+
+.game-message {
+  position: absolute;
+  top: 53%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 15px 30px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px #ff00ff55;
+  z-index: 10;
+}

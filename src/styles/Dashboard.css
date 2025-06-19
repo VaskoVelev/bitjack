@@ -1,0 +1,56 @@
+.menu-button {
+  position: fixed !important;
+  top: 80px !important;
+  left: 20px !important;
+  z-index: 1060 !important;
+  box-shadow: 0 0 15px #7f00ff !important;
+  font-family: "Orbitron", sans-serif !important;
+  color: #fff !important;
+  background: rgba(0, 0, 0, 0.85) !important;
+  border: 1px solid #7f00ff !important;
+  text-shadow: 0 0 10px #e100ff !important;
+}
+
+.sidebar-canvas {
+  top: 70px !important;
+  height: calc(100% - 70px) !important;
+  z-index: 1055 !important;
+  background-color: rgba(0, 0, 0, 0.95) !important;
+  color: #fff !important;
+  box-shadow: 0 0 20px #7f00ff !important;
+}
+
+.sidebar-title {
+  font-family: "Orbitron", sans-serif !important;
+  font-size: 28px !important;
+  color: #ff00ff !important;
+  text-shadow: 0 0 10px #ff00ff, 0 0 25px #7f00ff !important;
+}
+
+.sidebar-body {
+  font-family: "Orbitron", sans-serif !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  height: 100% !important;
+}
+
+.email-strong {
+  color: #ccc !important;
+}
+
+.balance-strong {
+  color: #00ffcc !important;
+}
+
+.btn-update-profile {
+  border-color: #ff00ff !important;
+  color: #ff00ff !important;
+  text-shadow: 0 0 5px #ff00ff !important;
+}
+
+.btn-logout {
+  text-shadow: 0 0 5px #ff0000 !important;
+  border-color: #ff0044 !important;
+  color: #ff0044 !important;
+}

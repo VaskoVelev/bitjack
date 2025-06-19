@@ -1,0 +1,24 @@
+.bitjack-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 15px #7f00ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.bitjack-logo {
+  font-size: 36px;
+  font-weight: bold;
+  font-family: "Orbitron", sans-serif;
+  color: #fff;
+  text-shadow: 0 0 5px #ff00ff, 0 0 15px #7f00ff, 0 0 25px #ff00ff;
+  letter-spacing: 1px;
+  user-select: none;
+}
