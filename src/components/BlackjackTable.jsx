@@ -8,6 +8,7 @@ import "../styles/BlackjackTable.css";
 const CARD_BACK_URL = "https://deckofcardsapi.com/static/img/back.png";
 const CARD_IMG = (code) => `https://deckofcardsapi.com/static/img/${code}.png`;
 
+// Създава разбъркано тесте от 52 карти
 function generateDeck() {
   const suits = ["S", "H", "D", "C"];
   const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
@@ -22,6 +23,7 @@ function generateDeck() {
   return deck.sort(() => Math.random() - 0.5);
 }
 
+// Преобразува кода на карта в числова стойност
 function getCardValue(code) {
   const rank = code.slice(0, -1);
   if (["K", "Q", "J", "0"].includes(rank)) return 10;
@@ -29,6 +31,7 @@ function getCardValue(code) {
   return parseInt(rank);
 }
 
+// Изчислява сбора от точките на даден набор от карти
 function calculatePoints(cards) {
   let sum = 0;
   let aces = 0;
@@ -40,6 +43,7 @@ function calculatePoints(cards) {
     sum += value;
   }
 
+  // Ако има аса и сборът е над 21, преобразува асата от 11 в 1
   while (sum > 21 && aces > 0) {
     sum -= 10;
     aces--;
@@ -48,6 +52,7 @@ function calculatePoints(cards) {
   return sum;
 }
 
+// Предварително зарежда изображенията на всички карти в браузъра
 function preloadDeckImages() {
   const suits = ["S", "H", "D", "C"];
   const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
@@ -63,6 +68,7 @@ function preloadDeckImages() {
   back.src = CARD_BACK_URL;
 }
 
+// Добавяне на печалбата към баланса и нулиране на активния залог
 const applyWinnings = async (amount, balance, setBalance, currentUser) => {
   const userRef = doc(db, "users", currentUser.uid);
   const newBalance = balance + amount;
@@ -85,14 +91,17 @@ export default function BlackjackTable() {
   const [showActions, setShowActions] = useState(false);
   const { balance, setBalance, currentUser } = useAuth();
 
+  // При зареждане — зареждаме изображенията
   useEffect(() => {
     preloadDeckImages();
   }, []);
 
+  // Стартира нова игра
   const startGame = async () => {
     if (bet < 1 || bet > 500) return alert("Your bet must be between $1 and $500.");
     if (bet > balance) return alert("You don't have enough balance to place this bet.");
 
+    // Намалява баланса и запазва активния залог
     await updateDoc(doc(db, "users", currentUser.uid), {
       balance: balance - bet,
       activeBet: bet,
@@ -100,6 +109,7 @@ export default function BlackjackTable() {
 
     setBalance((prev) => prev - bet);
 
+    // Генерира ново тесте
     const newDeck = generateDeck();
     const [p1, d1, p2, d2] = [newDeck.pop(), newDeck.pop(), newDeck.pop(), newDeck.pop()];
 
@@ -110,6 +120,7 @@ export default function BlackjackTable() {
     setShowActions(false);
     setMessage("");
 
+    // Анимира раздаването на картите
     setTimeout(() => setPlayerCards([{ code: p1, offset: false }]), 600);
     setTimeout(() => setDealerCards([{ code: d1, offset: false }]), 1200);
     setTimeout(() => setPlayerCards((prev) => [...prev, { code: p2, offset: true }]), 1800);
@@ -118,6 +129,7 @@ export default function BlackjackTable() {
       { code: "back", offset: true, hiddenCard: d2 },
     ]), 2400);
 
+    // Проверка за Блекджек
     setTimeout(async () => {
       const dealerHasBlackjack =
         (getCardValue(d1) === 11 && getCardValue(d2) === 10) ||
@@ -140,11 +152,12 @@ export default function BlackjackTable() {
         setMessage("Player has Blackjack! You win.");
         await applyWinnings(bet * 2.5, balance, setBalance, currentUser);
       } else {
-        setShowActions(true);
+        setShowActions(true); // Ако няма Блекджек, продължава играта
       }
     }, 2600);
   };
 
+  // Играчът тегли нова карта
   const hit = () => {
     if (deck.length === 0) return;
     setShowActions(false);
@@ -169,11 +182,13 @@ export default function BlackjackTable() {
     }, 600);
   };
 
+  // Играчът стои — дилърът започва да тегли
   const stand = () => {
     setShowActions(false);
     const newDealerCards = [...dealerCards];
     const hidden = newDealerCards.find((c) => c.code === "back");
 
+    // Показва обърнатата карта на дилъра
     if (hidden) {
       setTimeout(() => {
         hidden.code = hidden.hiddenCard;
@@ -185,6 +200,7 @@ export default function BlackjackTable() {
     let tempDeck = [...deck];
     let dealerHand = [...newDealerCards];
 
+    // Дилърът тегли карти, докато стигне поне 17 точки
     const drawDealerCard = () => {
       const dealerPoints = calculatePoints(dealerHand);
 
@@ -216,6 +232,7 @@ export default function BlackjackTable() {
         return;
       }
 
+      // Добавя нова карта към дилъра
       const nextCard = tempDeck.pop();
       dealerHand.push({ code: nextCard, offset: true });
       setDealerCards([...dealerHand]);

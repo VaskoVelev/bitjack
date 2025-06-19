@@ -12,6 +12,7 @@ export default function Dashboard() {
   const { currentUser, logout, balance, setBalance } = useAuth();
   const navigate = useNavigate();
 
+  // Изход от акаунта
   async function handleLogout() {
     try {
       await logout();
@@ -21,17 +22,19 @@ export default function Dashboard() {
     }
   }
 
+  // Зарежда текущия баланс от базата
   useEffect(() => {
     const fetchBalance = async () => {
       const ref = doc(db, "users", currentUser.uid);
       const snap = await getDoc(ref);
       if (snap.exists()) {
-        setBalance(snap.data().balance || 0);
+        setBalance(snap.data().balance || 0); // Ако има баланс, задаваме го
       }
     };
     if (currentUser) fetchBalance();
   }, [currentUser]);
 
+  // Депозиране на средства
   const handleDeposit = async () => {
     const input = prompt("Enter deposit amount:");
     const amount = parseFloat(input);
@@ -40,10 +43,11 @@ export default function Dashboard() {
     const userRef = doc(db, "users", currentUser.uid);
     const snap = await getDoc(userRef);
     const current = snap.data().balance || 0;
-    await updateDoc(userRef, { balance: current + amount });
-    setBalance(current + amount);
+    await updateDoc(userRef, { balance: current + amount }); // Актуализираме в базата
+    setBalance(current + amount); // Актуализираме локално
   };
 
+  // Теглене на средства
   const handleWithdraw = async () => {
     const input = prompt("Enter withdrawal amount:");
     const amount = parseFloat(input);
@@ -54,8 +58,8 @@ export default function Dashboard() {
     const current = snap.data().balance || 0;
     if (amount > current) return alert("Insufficient funds");
 
-    await updateDoc(userRef, { balance: current - amount });
-    setBalance(current - amount);
+    await updateDoc(userRef, { balance: current - amount }); // Изваждаме от базата
+    setBalance(current - amount); // Изваждаме от локалния state
   };
 
   return (
