@@ -231,6 +231,31 @@ export default function BlackjackTable() {
     setTimeout(() => drawDealerCard(), 1000);
   };
 
+  const doubleDown = () => {
+    if (deck.length === 0 || playerCards.length !== 2) return;
+
+    setBet((prevBet) => Math.min(prevBet * 2, 500));
+    setShowActions(false);
+
+    const nextCard = deck[deck.length - 1];
+    const updatedDeck = deck.slice(0, -1);
+
+    setTimeout(() => {
+      const newCard = { code: nextCard, offset: true, rotated: true };
+      const updatedPlayer = [...playerCards, newCard];
+
+      setPlayerCards(updatedPlayer);
+      setDeck(updatedDeck);
+
+      const newPoints = calculatePoints(updatedPlayer);
+      if (newPoints > 21) {
+        setMessage("You Busted!");
+      } else {
+        stand();
+      }
+    }, 600);
+  };
+
   const renderCards = (owner, cards) => {
     const totalPoints = calculatePoints(cards);
     return (
@@ -242,13 +267,13 @@ export default function BlackjackTable() {
         )}
         <div className={`card-row ${owner}`}>
           {cards.map((card, idx) => {
-            const offsetStyle =
-              owner === "player" && card.offset
-                ? {
-                    top: `-${idx * 16}px`,
-                    position: "relative",
-                  }
-                : {};
+            const offsetStyle = {
+              position: "relative",
+              ...(owner === "player" &&
+                card.offset && { top: `-${idx * 16}px` }),
+              ...(card.rotated && { transform: "rotate(90deg)" }),
+            };
+
             return (
               <img
                 key={idx}
@@ -333,6 +358,9 @@ export default function BlackjackTable() {
               </Button>
               <Button className="glow-button" onClick={stand}>
                 Stand
+              </Button>
+              <Button className="glow-button" onClick={doubleDown}>
+                Double
               </Button>
             </div>
           )}
