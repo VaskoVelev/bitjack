@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "react-bootstrap";
+import { doc, updateDoc } from "firebase/firestore";
+import { useAuth } from "../contexts/AuthContext";
+import { db } from "../firebase";
 import "../styles/BlackjackTable.css";
 
 const CARD_BACK_URL = "https://deckofcardsapi.com/static/img/back.png";
@@ -81,6 +84,17 @@ function preloadDeckImages() {
   back.src = CARD_BACK_URL;
 }
 
+const applyWinnings = async (amount, balance, setBalance, currentUser) => {
+  const userRef = doc(db, "users", currentUser.uid);
+  const newBalance = balance + amount;
+  await updateDoc(userRef, {
+    balance: newBalance,
+    activeBet: 0,
+  });
+  setBalance(newBalance);
+};
+
+
 export default function BlackjackTable() {
   const [deck, setDeck] = useState([]);
   const [playerCards, setPlayerCards] = useState([]);
@@ -89,16 +103,29 @@ export default function BlackjackTable() {
   const [gameStarted, setGameStarted] = useState(false);
   const [message, setMessage] = useState("");
   const [showActions, setShowActions] = useState(false);
+  const { balance, setBalance, currentUser } = useAuth();
 
   useEffect(() => {
     preloadDeckImages();
   }, []);
 
-  const startGame = () => {
+  const startGame = async () => {
     if (bet < 1 || bet > 500) {
       alert("Your bet must be between $1 and $500.");
       return;
     }
+
+    if (bet > balance) {
+      alert("You don't have enough balance to place this bet.");
+      return;
+    }
+
+    await updateDoc(doc(db, "users", currentUser.uid), {
+      balance: balance - bet,
+      activeBet: bet,
+    });
+
+    setBalance((prev) => prev - bet);
 
     const newDeck = generateDeck();
     const [p1, d1, p2, d2] = [
@@ -128,7 +155,7 @@ export default function BlackjackTable() {
         ]),
       2400
     );
-    setTimeout(() => {
+    setTimeout(async () => {
       const dealerHasBlackjack =
         (getCardValue(d1) === 11 && getCardValue(d2) === 10) ||
         (getCardValue(d1) === 10 && getCardValue(d2) === 11);
@@ -143,18 +170,21 @@ export default function BlackjackTable() {
           { code: d2, offset: true },
         ]);
         setMessage("Dealer has Blackjack! You Lose.");
+        await updateDoc(doc(db, "users", currentUser.uid), { activeBet: 0 });
       } else if (dealerHasBlackjack && playerHasBlackjack) {
         setDealerCards([
           { code: d1, offset: false },
           { code: d2, offset: true },
         ]);
         setMessage("Both have Blackjack! Push.");
+        await applyWinnings(bet, balance, setBalance, currentUser);
       } else if (playerHasBlackjack && !dealerHasBlackjack) {
         setDealerCards([
           { code: d1, offset: false },
           { code: d2, offset: true },
         ]);
         setMessage("Player has Blackjack! You win.");
+        await applyWinnings(bet * 2.5, balance, setBalance, currentUser);
       } else {
         setShowActions(true);
       }
@@ -169,7 +199,7 @@ export default function BlackjackTable() {
     const nextCard = deck[deck.length - 1];
     const updatedDeck = deck.slice(0, -1);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const newCard = { code: nextCard, offset: true };
       const updatedPlayer = [...playerCards, newCard];
 
@@ -179,6 +209,7 @@ export default function BlackjackTable() {
       const newPoints = calculatePoints(updatedPlayer);
       if (newPoints > 21) {
         setMessage("You Busted!");
+        await updateDoc(doc(db, "users", currentUser.uid), { activeBet: 0 });
       } else {
         setShowActions(true);
       }
@@ -204,18 +235,28 @@ export default function BlackjackTable() {
     const drawDealerCard = (index = 0) => {
       const dealerPoints = calculatePoints(dealerHand);
       if (dealerPoints >= 17 || tempDeck.length === 0) {
-        setTimeout(() => {
+        setTimeout(async () => {
           const playerPoints = calculatePoints(playerCards);
           const finalDealerPoints = calculatePoints(dealerHand);
 
           let result = "";
-          if (playerPoints > 21) result = "You Busted!";
-          else if (finalDealerPoints > 21) result = "Dealer Busted — You Win!";
-          else if (playerPoints > finalDealerPoints) result = "You Win!";
-          else if (playerPoints < finalDealerPoints) result = "You Lose!";
-          else result = "Push! (Draw)";
+          if (playerPoints > 21) {
+            result = "You Busted!";
+          } else if (finalDealerPoints > 21) {
+            result = "Dealer Busted — You Win!";
+            await applyWinnings(bet * 2, balance, setBalance, currentUser);
+          } else if (playerPoints > finalDealerPoints) {
+            result = "You Win!";
+            await applyWinnings(bet * 2, balance, setBalance, currentUser);
+          } else if (playerPoints < finalDealerPoints) {
+            result = "You Lose!";
+          } else {
+            result = "Push! (Draw)";
+            await applyWinnings(bet * 2, balance, setBalance, currentUser);
+          }
 
           setMessage(result);
+          await updateDoc(doc(db, "users", currentUser.uid), { activeBet: 0 });
         }, 700);
         return;
       }
@@ -229,31 +270,6 @@ export default function BlackjackTable() {
     };
 
     setTimeout(() => drawDealerCard(), 1000);
-  };
-
-  const doubleDown = () => {
-    if (deck.length === 0 || playerCards.length !== 2) return;
-
-    setBet((prevBet) => Math.min(prevBet * 2, 500));
-    setShowActions(false);
-
-    const nextCard = deck[deck.length - 1];
-    const updatedDeck = deck.slice(0, -1);
-
-    setTimeout(() => {
-      const newCard = { code: nextCard, offset: true, rotated: true };
-      const updatedPlayer = [...playerCards, newCard];
-
-      setPlayerCards(updatedPlayer);
-      setDeck(updatedDeck);
-
-      const newPoints = calculatePoints(updatedPlayer);
-      if (newPoints > 21) {
-        setMessage("You Busted!");
-      } else {
-        stand();
-      }
-    }, 600);
   };
 
   const renderCards = (owner, cards) => {
@@ -358,9 +374,6 @@ export default function BlackjackTable() {
               </Button>
               <Button className="glow-button" onClick={stand}>
                 Stand
-              </Button>
-              <Button className="glow-button" onClick={doubleDown}>
-                Double
               </Button>
             </div>
           )}

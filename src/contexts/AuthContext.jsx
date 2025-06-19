@@ -7,7 +7,8 @@ import {
   sendPasswordResetEmail,
   updatePassword as fbUpdatePassword,
 } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 const AuthContext = React.createContext();
 
@@ -18,6 +19,7 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState();
   const [loading, setLoading] = useState(true);
+  const [balance, setBalance] = useState(0);
 
   function signup(email, password) {
     return createUserWithEmailAndPassword(auth, email, password);
@@ -40,8 +42,26 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+
+      if (user) {
+        const userRef = doc(db, "users", user.uid);
+        const snap = await getDoc(userRef);
+
+        if (!snap.exists()) {
+          await setDoc(userRef, { balance: 0, activeBet: 0 });
+          setBalance(0);
+        } else {
+          const data = snap.data();
+          setBalance(data.balance || 0);
+
+          if (data.activeBet && data.activeBet > 0) {
+            await updateDoc(userRef, { activeBet: 0 });
+          }
+        }
+      }
+
       setLoading(false);
     });
 
@@ -55,6 +75,8 @@ export function AuthProvider({ children }) {
     logout,
     resetPassword,
     updatePassword,
+    balance,
+    setBalance,
   };
 
   return (
