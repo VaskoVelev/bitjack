@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import BlackjackTable from "./BlackjackTable";
 import { db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
+import "../styles/Dashboard.css";
 
 export default function Dashboard() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -63,69 +64,33 @@ export default function Dashboard() {
         <Button
           variant="dark"
           onClick={() => setShowSidebar(true)}
-          style={{
-            position: "fixed",
-            top: "80px",
-            left: "20px",
-            zIndex: 1060,
-            boxShadow: "0 0 15px #7f00ff",
-            fontFamily: "Orbitron",
-            color: "#fff",
-            background: "rgba(0,0,0,0.85)",
-            border: "1px solid #7f00ff",
-            textShadow: "0 0 10px #e100ff",
-          }}
+          className="menu-button"
         >
           ☰ Menu
         </Button>
       )}
+
       <Offcanvas
         show={showSidebar}
         onHide={() => setShowSidebar(false)}
         backdrop={false}
         scroll={true}
         placement="start"
-        style={{
-          top: "70px",
-          height: "calc(100% - 70px)",
-          zIndex: 1055,
-          backgroundColor: "rgba(0, 0, 0, 0.95)",
-          color: "#fff",
-          boxShadow: "0 0 20px #7f00ff",
-        }}
+        className="sidebar-canvas"
       >
         <Offcanvas.Header closeButton closeVariant="white">
-          <Offcanvas.Title
-            style={{
-              fontFamily: "Orbitron",
-              fontSize: "28px",
-              color: "#ff00ff",
-              textShadow: "0 0 10px #ff00ff, 0 0 25px #7f00ff",
-            }}
-          >
+          <Offcanvas.Title className="sidebar-title">
             Bit Jack
           </Offcanvas.Title>
         </Offcanvas.Header>
 
-        <Offcanvas.Body
-          style={{
-            fontFamily: "Orbitron",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            height: "100%",
-          }}
-        >
+        <Offcanvas.Body className="sidebar-body">
           <div>
             <div className="mb-3">
-              Logged in as{" "}
-              <strong style={{ color: "#ccc" }}>{currentUser?.email}</strong>
+              Logged in as <strong className="email-label">{currentUser?.email}</strong>
             </div>
             <div className="mb-4">
-              Balance:{" "}
-              <strong style={{ color: "#00ffcc" }}>
-                ${balance.toFixed(2)}
-              </strong>
+              Balance: <strong className="balance-label">${balance.toFixed(2)}</strong>
             </div>
             <Nav className="flex-column gap-3">
               <Button variant="outline-secondary" onClick={handleDeposit}>
@@ -140,29 +105,21 @@ export default function Dashboard() {
             <Button
               variant="outline-light"
               onClick={() => navigate("/update-profile")}
-              style={{
-                borderColor: "#ff00ff",
-                color: "#ff00ff",
-                textShadow: "0 0 5px #ff00ff",
-              }}
+              className="btn-update-profile"
             >
               Update Profile
             </Button>
             <Button
               variant="outline-danger"
               onClick={handleLogout}
-              className="w-100"
-              style={{
-                textShadow: "0 0 5px #ff0000",
-                borderColor: "#ff0044",
-                color: "#ff0044",
-              }}
+              className="w-100 btn-logout"
             >
               Log Out
             </Button>
           </div>
         </Offcanvas.Body>
       </Offcanvas>
+
       <BlackjackTable />
     </>
   );

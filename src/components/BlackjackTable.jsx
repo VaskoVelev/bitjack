@@ -10,27 +10,15 @@ const CARD_IMG = (code) => `https://deckofcardsapi.com/static/img/${code}.png`;
 
 function generateDeck() {
   const suits = ["S", "H", "D", "C"];
-  const ranks = [
-    "A",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "0",
-    "J",
-    "Q",
-    "K",
-  ];
+  const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
   const deck = [];
+
   for (let s of suits) {
     for (let r of ranks) {
       deck.push(r + s);
     }
   }
+
   return deck.sort(() => Math.random() - 0.5);
 }
 
@@ -44,42 +32,33 @@ function getCardValue(code) {
 function calculatePoints(cards) {
   let sum = 0;
   let aces = 0;
+
   for (let card of cards) {
     if (card.code === "back") continue;
     const value = getCardValue(card.code);
     if (value === 11) aces++;
     sum += value;
   }
+
   while (sum > 21 && aces > 0) {
     sum -= 10;
     aces--;
   }
+
   return sum;
 }
 
 function preloadDeckImages() {
   const suits = ["S", "H", "D", "C"];
-  const ranks = [
-    "A",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "0",
-    "J",
-    "Q",
-    "K",
-  ];
+  const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
+
   for (let s of suits) {
     for (let r of ranks) {
       const img = new Image();
-      img.src = `https://deckofcardsapi.com/static/img/${r + s}.png`;
+      img.src = CARD_IMG(r + s);
     }
   }
+
   const back = new Image();
   back.src = CARD_BACK_URL;
 }
@@ -87,13 +66,14 @@ function preloadDeckImages() {
 const applyWinnings = async (amount, balance, setBalance, currentUser) => {
   const userRef = doc(db, "users", currentUser.uid);
   const newBalance = balance + amount;
+
   await updateDoc(userRef, {
     balance: newBalance,
     activeBet: 0,
   });
+
   setBalance(newBalance);
 };
-
 
 export default function BlackjackTable() {
   const [deck, setDeck] = useState([]);
@@ -110,15 +90,8 @@ export default function BlackjackTable() {
   }, []);
 
   const startGame = async () => {
-    if (bet < 1 || bet > 500) {
-      alert("Your bet must be between $1 and $500.");
-      return;
-    }
-
-    if (bet > balance) {
-      alert("You don't have enough balance to place this bet.");
-      return;
-    }
+    if (bet < 1 || bet > 500) return alert("Your bet must be between $1 and $500.");
+    if (bet > balance) return alert("You don't have enough balance to place this bet.");
 
     await updateDoc(doc(db, "users", currentUser.uid), {
       balance: balance - bet,
@@ -128,12 +101,8 @@ export default function BlackjackTable() {
     setBalance((prev) => prev - bet);
 
     const newDeck = generateDeck();
-    const [p1, d1, p2, d2] = [
-      newDeck.pop(),
-      newDeck.pop(),
-      newDeck.pop(),
-      newDeck.pop(),
-    ];
+    const [p1, d1, p2, d2] = [newDeck.pop(), newDeck.pop(), newDeck.pop(), newDeck.pop()];
+
     setPlayerCards([]);
     setDealerCards([]);
     setDeck(newDeck);
@@ -143,18 +112,12 @@ export default function BlackjackTable() {
 
     setTimeout(() => setPlayerCards([{ code: p1, offset: false }]), 600);
     setTimeout(() => setDealerCards([{ code: d1, offset: false }]), 1200);
-    setTimeout(
-      () => setPlayerCards((prev) => [...prev, { code: p2, offset: true }]),
-      1800
-    );
-    setTimeout(
-      () =>
-        setDealerCards((prev) => [
-          ...prev,
-          { code: "back", offset: true, hiddenCard: d2 },
-        ]),
-      2400
-    );
+    setTimeout(() => setPlayerCards((prev) => [...prev, { code: p2, offset: true }]), 1800);
+    setTimeout(() => setDealerCards((prev) => [
+      ...prev,
+      { code: "back", offset: true, hiddenCard: d2 },
+    ]), 2400);
+
     setTimeout(async () => {
       const dealerHasBlackjack =
         (getCardValue(d1) === 11 && getCardValue(d2) === 10) ||
@@ -165,24 +128,15 @@ export default function BlackjackTable() {
         (getCardValue(p1) === 10 && getCardValue(p2) === 11);
 
       if (dealerHasBlackjack && !playerHasBlackjack) {
-        setDealerCards([
-          { code: d1, offset: false },
-          { code: d2, offset: true },
-        ]);
+        setDealerCards([{ code: d1, offset: false }, { code: d2, offset: true }]);
         setMessage("Dealer has Blackjack! You Lose.");
         await updateDoc(doc(db, "users", currentUser.uid), { activeBet: 0 });
       } else if (dealerHasBlackjack && playerHasBlackjack) {
-        setDealerCards([
-          { code: d1, offset: false },
-          { code: d2, offset: true },
-        ]);
+        setDealerCards([{ code: d1, offset: false }, { code: d2, offset: true }]);
         setMessage("Both have Blackjack! Push.");
         await applyWinnings(bet, balance, setBalance, currentUser);
-      } else if (playerHasBlackjack && !dealerHasBlackjack) {
-        setDealerCards([
-          { code: d1, offset: false },
-          { code: d2, offset: true },
-        ]);
+      } else if (playerHasBlackjack) {
+        setDealerCards([{ code: d1, offset: false }, { code: d2, offset: true }]);
         setMessage("Player has Blackjack! You win.");
         await applyWinnings(bet * 2.5, balance, setBalance, currentUser);
       } else {
@@ -193,7 +147,6 @@ export default function BlackjackTable() {
 
   const hit = () => {
     if (deck.length === 0) return;
-
     setShowActions(false);
 
     const nextCard = deck[deck.length - 1];
@@ -232,14 +185,16 @@ export default function BlackjackTable() {
     let tempDeck = [...deck];
     let dealerHand = [...newDealerCards];
 
-    const drawDealerCard = (index = 0) => {
+    const drawDealerCard = () => {
       const dealerPoints = calculatePoints(dealerHand);
+
       if (dealerPoints >= 17 || tempDeck.length === 0) {
         setTimeout(async () => {
           const playerPoints = calculatePoints(playerCards);
           const finalDealerPoints = calculatePoints(dealerHand);
 
           let result = "";
+
           if (playerPoints > 21) {
             result = "You Busted!";
           } else if (finalDealerPoints > 21) {
@@ -266,7 +221,7 @@ export default function BlackjackTable() {
       setDealerCards([...dealerHand]);
       setDeck([...tempDeck]);
 
-      setTimeout(() => drawDealerCard(index + 1), 700);
+      setTimeout(() => drawDealerCard(), 700);
     };
 
     setTimeout(() => drawDealerCard(), 1000);
@@ -274,6 +229,7 @@ export default function BlackjackTable() {
 
   const renderCards = (owner, cards) => {
     const totalPoints = calculatePoints(cards);
+
     return (
       <div className={`card-group ${owner}`}>
         {owner === "dealer" && (
@@ -285,8 +241,7 @@ export default function BlackjackTable() {
           {cards.map((card, idx) => {
             const offsetStyle = {
               position: "relative",
-              ...(owner === "player" &&
-                card.offset && { top: `-${idx * 16}px` }),
+              ...(owner === "player" && card.offset && { top: `-${idx * 16}px` }),
               ...(card.rotated && { transform: "rotate(90deg)" }),
             };
 
@@ -295,7 +250,7 @@ export default function BlackjackTable() {
                 key={idx}
                 src={card.code === "back" ? CARD_BACK_URL : CARD_IMG(card.code)}
                 alt={card.code}
-                className={`card-image fade-in`}
+                className="card-image fade-in"
                 style={offsetStyle}
               />
             );
@@ -312,12 +267,9 @@ export default function BlackjackTable() {
 
   return (
     <div className="blackjack-background">
-      {!gameStarted && (
+      {!gameStarted ? (
         <div className="text-center d-flex flex-column align-items-center">
-          <h2
-            className="mb-5"
-            style={{ fontWeight: "bold", color: "#fff", fontSize: "2.2rem" }}
-          >
+          <h2 className="mb-5" style={{ fontWeight: "bold", color: "#fff", fontSize: "2.2rem" }}>
             Place Your Bet: <span style={{ color: "#00ffcc" }}>${bet}</span>
           </h2>
           <div className="d-flex justify-content-center gap-5 flex-wrap mb-5">
@@ -332,9 +284,7 @@ export default function BlackjackTable() {
                   width: "100px",
                   height: "100px",
                   borderRadius: "50%",
-                  backgroundColor: ["#2ecc71", "#3498db", "#e74c3c", "#34495e"][
-                    idx
-                  ],
+                  backgroundColor: ["#2ecc71", "#3498db", "#e74c3c", "#34495e"][idx],
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -345,45 +295,30 @@ export default function BlackjackTable() {
                   boxShadow: "0 0 20px #ff00ff",
                   transition: "transform 0.2s",
                 }}
-                onMouseOver={(e) =>
-                  (e.currentTarget.style.transform = "scale(1.1)")
-                }
-                onMouseOut={(e) =>
-                  (e.currentTarget.style.transform = "scale(1.0)")
-                }
+                onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
+                onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1.0)")}
               >
                 ${value}
               </div>
             ))}
           </div>
-          <Button className="glow-button" onClick={startGame}>
-            Start Game
-          </Button>
+          <Button className="glow-button" onClick={startGame}>Start Game</Button>
         </div>
-      )}
-
-      {gameStarted && (
+      ) : (
         <>
           {renderCards("dealer", dealerCards)}
           {renderCards("player", playerCards)}
 
           {showActions && (
             <div className="action-buttons">
-              <Button className="glow-button" onClick={hit}>
-                Hit
-              </Button>
-              <Button className="glow-button" onClick={stand}>
-                Stand
-              </Button>
+              <Button className="glow-button" onClick={hit}>Hit</Button>
+              <Button className="glow-button" onClick={stand}>Stand</Button>
             </div>
           )}
 
           {message && (
-            <h3
-              className="text-center mt-4"
-              style={{ color: "#fff", textShadow: "0 0 10px #00ffcc" }}
-            >
-              {message && <div className="game-message">{message}</div>}
+            <h3 className="text-center mt-4" style={{ color: "#fff", textShadow: "0 0 10px #00ffcc" }}>
+              <div className="game-message">{message}</div>
             </h3>
           )}
         </>
